@@ -4,7 +4,7 @@
 
 set -euo pipefail
 
-REPO_DEFAULT="mbaudran/Lomo-Saltado"
+REPO_DEFAULT="mbaudran/Lomo-Saltado-Claude-mod"
 REPO="${SALTADO_REPO:-$REPO_DEFAULT}"
 DEST="$HOME/.claude/plugins/marketplaces/lomo-saltado"
 

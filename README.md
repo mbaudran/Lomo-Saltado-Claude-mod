@@ -90,20 +90,20 @@ tests  shop-frontend
 Desde el prompt de Claude Code:
 
 ```
-/plugin install saltado --marketplace mbaudran/Lomo-Saltado
+/plugin install saltado --marketplace mbaudran/Lomo-Saltado-Claude-mod
 ```
 
 O desde una terminal:
 
 ```bash
-claude plugin marketplace add mbaudran/Lomo-Saltado
+claude plugin marketplace add mbaudran/Lomo-Saltado-Claude-mod
 claude plugin install saltado@lomo-saltado
 ```
 
 O con el instalador:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mbaudran/Lomo-Saltado/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/mbaudran/Lomo-Saltado-Claude-mod/main/install.sh | bash
 ```
 
 Necesita una versión de Claude Code con mods de function hooks. Probado en 2.1.303.
@@ -169,7 +169,7 @@ Porque se hace a fuego vivo, rápido y con flambeado, como un buen turno de Clau
 |---|---|---|
 | `SALTADO_ALERT_THRESHOLD` | `120` | Segundos. Los turnos más largos dan una alerta fija en vez de un banner. |
 | `SALTADO_NOTIFY` | on | `off` silencia las notificaciones; la banda y la cocina siguen. |
-| `SALTADO_REPO` | `mbaudran/Lomo-Saltado` | El repo del que tira `install.sh` (para forks). |
+| `SALTADO_REPO` | `mbaudran/Lomo-Saltado-Claude-mod` | El repo del que tira `install.sh` (para forks). |
 
 **Icono en el banner (opcional, macOS).** Con [terminal-notifier](https://github.com/julienXX/terminal-notifier) instalado (`brew install terminal-notifier`), los banners llevan el icono de la sartén.
 
