@@ -1,0 +1,14 @@
+{
+  "name": "lomo-saltado",
+  "owner": {
+    "name": "Mael"
+  },
+  "description": "¿Te quedas mirando a Claude Code? Cada terminal tiene un nombre, una barra de progreso y un lomo saltado en el wok encima del prompt; /saltado muestra todas las terminales a la vez.",
+  "plugins": [
+    {
+      "name": "saltado",
+      "source": "./saltado",
+      "description": "Un mod: banda por terminal con nombre, barra de progreso y un wok de lomo saltado en pixel art con flambeado, una cocina con todas las terminales y avisos al terminar."
+    }
+  ]
+}

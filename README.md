@@ -1,0 +1,193 @@
+<div align="center">
+
+<img src="./saltado/assets/icon.png" width="180" alt="Lomo-Saltado" />
+
+<h1>Lomo-Saltado</h1>
+
+<p><em>Deja de vigilar a Claude. Que se saltee solo.</em></p>
+
+<p>
+<img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-green?style=flat-square" />
+<img alt="Platform: macOS · Linux" src="https://img.shields.io/badge/platform-macOS%20%C2%B7%20Linux-blue?style=flat-square" />
+</p>
+
+<p>
+<a href="#qué-ves">Qué ves</a> ·
+<a href="#instalar">Instalar</a> ·
+<a href="#cómo-sabe-la-barra">Cómo sabe la barra</a> ·
+<a href="#cómo-funciona">Cómo funciona</a> ·
+<a href="#preguntas">Preguntas</a>
+</p>
+
+</div>
+
+---
+
+> **¿Te quedas mirando la pantalla esperando a que Claude termine?**
+
+Tienes tres terminales de Claude Code. Una refactoriza, otra escribe tests y la tercera acabó hace diez minutos sin que te dieras cuenta. `Lomo-Saltado` le da a cada terminal un nombre, una barra de progreso en vivo y un **lomo saltado que se cocina en el wok** mientras Claude trabaja. Un comando muestra todas las terminales a la vez.
+
+Es un **mod** de Claude Code (function hooks que dibujan directamente en la interfaz), basado en [`cooked`](https://github.com/Marcelfedz/cooked) de Marcel, que cocina una paella. Aquí cambiamos la paella valenciana por el clásico peruano.
+
+---
+
+## Qué ves
+
+**Encima del prompt, en cada terminal**: su nombre, una barra de progreso, lo que está haciendo ahora mismo y un wok en pixel art con fuego y humo:
+
+```
+[wok]  marshall  ━━━━━━━━━━━━━━━━━━━━╸─────────────────  3/7
+       ▸ Escribiendo la cocina
+       14 ops · 2 ayudantes · 1m 20s · editando register.tsx
+       "convierte cooked en un lomo saltado"
+```
+
+El wok se ve desde arriba: acero negro, un asa corta a la izquierda y el mango largo de madera a la derecha, con llamas lamiendo el borde. Los ingredientes entran en orden, como en la receta:
+
+1. **El lomo** primero: tiras rojas que se sellan y se vuelven marrones.
+2. **La cebolla roja**, morada al principio y más suave después.
+3. **El tomate** y **el ají amarillo**.
+4. **Las papas fritas**, al final.
+5. **El perejil picado**, solo cuando está servido.
+
+Mientras cocina, el wok **se saltea**: cada segundo y medio la mezcla salta y cae en otro sitio. Cada pocos segundos viene **el flambeado**: el wok se prende y las llamas suben por encima de la comida. El jugo (sillao y vinagre) va oscureciendo el fondo.
+
+**Al pie de la banda, la línea de sesión** (en el azul del tema):
+
+```
+opus 5.5 · contexto ███░░░░░░░ 34% · ↑1.2M ↓84k tokens · sesión 1h 05m · límite 5h 42%
+```
+
+Modelo, cuánto contexto queda (con `casi lleno` desde el 80 %), los tokens gastados en la sesión, cuánto lleva abierta y tus límites de uso (con suscripción) o el coste (con API key).
+
+<img src="./saltado/assets/wok.png" alt="El wok en cinco puntos de cocción, el flambeado y las barras" />
+
+**`/saltado` abre la cocina**: un panel con todas las terminales de la máquina que usan el mod:
+
+```
+Cocina
+3 terminales · 2 saltando
+
+marshall  esta terminal
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╸─────────────────────  3/7 · 14 ops · 1m 20s
+▸ Escribiendo la cocina
+
+api  shop-backend
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  servido en 4m 02s · 61 ops
+
+tests  shop-frontend
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  9 ops · 0m 41s
+▸ $ npm test
+```
+
+`/saltado nombre api` renombra la terminal en la que estás. Por defecto se llama como la carpeta del proyecto.
+
+**Cuando termina un turno**: una notificación con el nombre de la terminal y **¡Saltado!**. Un banner si duró menos de 2 minutos, una alerta que hay que cerrar si duró más, con lo que pediste, las carpetas tocadas y las herramientas usadas. ✅ o ❌ según si falló alguna herramienta.
+
+---
+
+## Instalar
+
+Desde el prompt de Claude Code:
+
+```
+/plugin install saltado --marketplace mbaudran/Lomo-Saltado
+```
+
+O desde una terminal:
+
+```bash
+claude plugin marketplace add mbaudran/Lomo-Saltado
+claude plugin install saltado@lomo-saltado
+```
+
+O con el instalador:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/mbaudran/Lomo-Saltado/main/install.sh | bash
+```
+
+Necesita una versión de Claude Code con mods de function hooks. Probado en 2.1.303.
+
+---
+
+## Cómo sabe la barra
+
+Claude Code no sabe cuánto va a tardar una tarea, así que un porcentaje por tiempo sería inventado. `Lomo-Saltado` no se lo inventa.
+
+- **Si Claude lleva una lista de tareas** (`TodoWrite`, o `TaskCreate` / `TaskUpdate`), la barra es la parte real de pasos hechos, `3/7`, y la línea de abajo es el paso en curso.
+- **Si no lleva ninguna**, la banda dice `sin lista de tareas` y la barra es un pulso que recorre la pista: vivo, pero sin afirmar nada. La línea de abajo dice qué hizo la última herramienta (`$ npm test`, `editando register.tsx`, `mandando a un ayudante: Explora el repo`).
+
+El mod no pide a Claude que haga ninguna lista: no añade herramientas ni texto al prompt, así que cuesta **cero tokens extra**. Solo lee lo que Claude hace de todas formas.
+
+El wok es decoración y puede adivinar: sin plan se cocina despacio con el tiempo, y nunca se sirve antes de que termine el turno.
+
+---
+
+## Cómo funciona
+
+Un módulo de hooks, `saltado/hooks/register.tsx`, sobre la API de mods:
+
+| Evento | Qué hace |
+|---|---|
+| `turn.start` | Un plato nuevo: el prompt, la hora de inicio, contadores a cero. El turno de un subagente cuenta como ayudante. |
+| `tool.call` | Cuenta la operación, describe la actividad, apunta los archivos editados; tras `TodoWrite` / `TaskCreate` / `TaskUpdate`, actualiza el plan. Nunca bloquea una llamada. |
+| `turn.complete` | Lo marca como servido, suma los tokens del turno y manda la notificación. |
+| `ui.render` `AbovePrompt` | Dibuja la banda. El wok y las barras son celdas `Raster` (pixel art con medios bloques), animadas con `$.ui.blit`. |
+| `ui.render` `Pane` | Dibuja la cocina. |
+| `command.run` `saltado` | Abre o cierra la cocina; `nombre` renombra la terminal. |
+
+El estado vive en `$.state`, así que recargar el mod no lo pierde. Para la cocina, cada sesión escribe un JSON pequeño en `~/.claude/saltado/cocina/<session-id>.json` (latido cada 15 s, se borra al cerrar la sesión, los de más de 12 h se limpian). Nada sale de tu máquina.
+
+El dibujo está en `saltado/hooks/wok.ts`, con funciones puras. `node --experimental-strip-types tools/saltado-preview.ts saltado/assets/wok.png` lo renderiza a PNG (y el icono a `icon.png`) para ajustar la receta.
+
+Tests: `claude plugin test saltado`.
+
+---
+
+## Preguntas
+
+**¿Es seguro?**
+Sí. Todo el código está en este repo. Cuenta llamadas a herramientas, mide turnos, escribe un JSON por sesión abierta en `~/.claude/saltado/` y muestra notificaciones de macOS o Linux. No envía datos a ningún sitio.
+
+**¿Hace más lento a Claude?**
+No. Una llamada a herramienta cuesta un par de escrituras de estado en memoria. La animación repinta unas decenas de celdas a unos siete fotogramas por segundo, solo mientras algo se cocina o la cocina está abierta.
+
+**¿Puedo ocultar la banda?**
+`ctrl+x ctrl+a` (o el `[-]` a su lado) la pliega, como cualquier banda encima del prompt.
+
+**¿Funciona fuera de la terminal?**
+La app de escritorio dibuja la misma banda y cocina con barras de texto (no tiene celdas de píxeles, así que no hay wok). Las notificaciones usan macOS primero, `notify-send` en Linux y el canal propio de Claude Code en el resto.
+
+**¿Por qué lomo saltado?**
+Porque se hace a fuego vivo, rápido y con flambeado, como un buen turno de Claude. Y porque cuando termina, está *saltado*.
+
+---
+
+## Configuración
+
+| Variable | Por defecto | Qué hace |
+|---|---|---|
+| `SALTADO_ALERT_THRESHOLD` | `120` | Segundos. Los turnos más largos dan una alerta fija en vez de un banner. |
+| `SALTADO_NOTIFY` | on | `off` silencia las notificaciones; la banda y la cocina siguen. |
+| `SALTADO_REPO` | `mbaudran/Lomo-Saltado` | El repo del que tira `install.sh` (para forks). |
+
+**Icono en el banner (opcional, macOS).** Con [terminal-notifier](https://github.com/julienXX/terminal-notifier) instalado (`brew install terminal-notifier`), los banners llevan el icono del wok.
+
+---
+
+## Desinstalar
+
+```bash
+claude plugin uninstall saltado
+claude plugin marketplace remove lomo-saltado
+rm -rf ~/.claude/saltado
+```
+
+O `bash ~/.claude/plugins/marketplaces/lomo-saltado/uninstall.sh` si lo instalaste con `install.sh`.
+
+---
+
+## Créditos y licencia
+
+Basado en [`cooked`](https://github.com/Marcelfedz/cooked) de Marcel (MIT): la banda, la cocina, las barras y las notificaciones son suyas; el wok, la receta y el castellano son de aquí. MIT, ver [`LICENSE`](./LICENSE).
