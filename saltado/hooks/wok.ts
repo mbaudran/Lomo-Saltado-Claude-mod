@@ -1,4 +1,4 @@
-// Pixel art for the wok of lomo saltado and the progress bar, drawn as Raster cells.
+// Pixel art for the pan of lomo saltado and the progress bar, drawn as Raster cells.
 // Pure functions: no engine calls, so the same code renders a PNG preview in Node.
 
 /** A pixel nothing paints: the terminal's own background shows through. */
@@ -11,7 +11,7 @@ const UPPER_HALF = 0x2580
 const LOWER_HALF = 0x2584
 
 export type WokLook = {
-  /** 0 raw beef in a hot wok, 1 served with fries and parsley. */
+  /** 0 raw beef in a hot pan, 1 served with cilantro. */
   doneness: number
   /** Animation step; one per tick. */
   frame: number
@@ -21,40 +21,41 @@ export type WokLook = {
 
 type Rgb = [number, number, number]
 
-// Carbon steel, blackened by years of wok hei.
-const RIM = 0x4a4a52
-const RIM_LIGHT = 0x8e8e9a
-const RIM_DARK = 0x1e1e24
-const WALL = 0x2c2c32
-const STEEL: Rgb = [52, 50, 56]
-const HANDLE = 0x7a4a26
-const HANDLE_DARK = 0x55331a
-const HANDLE_LIGHT = 0xa0683a
+// A stainless steel pan, bright at the rim, with a wooden spoon in it and a
+// blue kitchen towel over its handle.
+const RIM = 0xb4b4ba
+const RIM_LIGHT = 0xe8e8ec
+const RIM_DARK = 0x74747c
+const WALL = 0x9c9ca4
+const WALL_DARK = 0x6e6e76
+const STEEL: Rgb = [150, 150, 158]
+const SPOON = 0xa8743e
+const SPOON_DARK = 0x6a4424
+const TOWEL = [0x4a74c4, 0x3a5ea8, 0x6c94dc]
 const FLAME = [0xffe04a, 0xffa21f, 0xf0641e, 0xc8361a]
 
-// What goes into the wok, in order: the lomo first, then onion, tomato, ají
-// amarillo and the fries; parsley only once it is served.
-const BEEF_RAW: Rgb = [178, 52, 58]
-const BEEF_SEARED: Rgb = [112, 56, 30]
-const ONION_RAW: Rgb = [128, 46, 118]
-const ONION_SOFT: Rgb = [186, 108, 156]
-const TOMATO: Rgb = [222, 54, 40]
-const AJI: Rgb = [246, 182, 38]
-const FRIES: Rgb = [242, 208, 112]
-const FRIES_EDGE: Rgb = [214, 160, 64]
-const SAUCE: Rgb = [92, 40, 18]
-const PARSLEY = [0x5fb548, 0x3f9a36]
+// What goes into the pan, in order: the lomo first, then the red onion, the
+// tomato and the ají amarillo; cilantro only once it is served. Each piece is
+// two pixels, a body and an edge: the onion shows its white inner layer, the
+// tomato its shine.
+const BEEF_RAW: [Rgb, Rgb] = [[176, 56, 62], [150, 40, 48]]
+const BEEF_SEARED: [Rgb, Rgb] = [[146, 92, 62], [104, 62, 40]]
+const ONION_RAW: [Rgb, Rgb] = [[118, 30, 96], [214, 190, 204]]
+const ONION_GLAZED: [Rgb, Rgb] = [[156, 30, 112], [226, 184, 208]]
+const TOMATO: [Rgb, Rgb] = [[224, 60, 36], [246, 116, 64]]
+const AJI: [Rgb, Rgb] = [[248, 196, 40], [234, 148, 30]]
+const SAUCE: Rgb = [48, 22, 12]
+const CILANTRO = [0x5cc84a, 0x36a032]
 
 /** Each ingredient: when it goes in, and its share of the pile. */
-const PILE: { name: 'beef' | 'onion' | 'tomato' | 'aji' | 'fries'; at: number; share: number }[] = [
+const PILE: { name: 'beef' | 'onion' | 'tomato' | 'aji'; at: number; share: number }[] = [
   { name: 'beef', at: 0, share: 0.42 },
-  { name: 'onion', at: 0.2, share: 0.16 },
-  { name: 'tomato', at: 0.4, share: 0.12 },
-  { name: 'aji', at: 0.55, share: 0.08 },
-  { name: 'fries', at: 0.75, share: 0.16 },
+  { name: 'onion', at: 0.15, share: 0.18 },
+  { name: 'tomato', at: 0.35, share: 0.13 },
+  { name: 'aji', at: 0.5, share: 0.1 },
 ]
 
-/** Frames between two tosses of the wok: the pile jumps and lands somewhere else. */
+/** Frames between two tosses of the pan: the pile jumps and lands somewhere else. */
 const TOSS_EVERY = 10
 /** Frames between two flambé bursts, and how long one lasts. */
 const FLARE_EVERY = 28
@@ -79,29 +80,29 @@ const hash = (x: number, y: number, seed = 0): number => {
   return (n >>> 0) / 4294967296
 }
 
-/** The colour of one piece of an ingredient, at a doneness, lit a little by `shade` (0..1). */
+/** The colour of one pixel of an ingredient at a doneness: its body or its edge, lit a little by `shade` (0..1). */
 function pieceColour(name: (typeof PILE)[number]['name'], doneness: number, shade: number, isEdge: boolean): Rgb {
+  const side = isEdge ? 1 : 0
   const light = (rgb: Rgb) => mix(rgb, [255, 245, 230], (shade - 0.5) * 0.25)
   switch (name) {
     case 'beef':
-      // Seared fast: red to brown in the first half, glazed darker with the soy and vinegar after.
-      return light(mix(BEEF_RAW, BEEF_SEARED, Math.min(1, doneness * 1.8)))
+      // Seared fast: red to brown in the first half, glazed darker with the sillao and vinegar after.
+      return light(mix(BEEF_RAW[side], BEEF_SEARED[side], Math.min(1, doneness * 1.8)))
     case 'onion':
-      return light(mix(ONION_RAW, ONION_SOFT, Math.min(1, (doneness - 0.2) * 2)))
+      return light(mix(ONION_RAW[side], ONION_GLAZED[side], Math.min(1, (doneness - 0.15) * 2)))
     case 'tomato':
-      return light(TOMATO)
+      return light(TOMATO[side])
     case 'aji':
-      return light(AJI)
-    case 'fries':
-      return light(isEdge ? FRIES_EDGE : FRIES)
+      return light(AJI[side])
   }
 }
 
 /**
- * The wok as a grid of pixels, `width` by `height` (even), row-major: a round
- * wok seen from above at an angle, a helper loop on the left and a long wooden
- * handle on the right, smoke rising over it, flames licking its lower edge and,
- * every few seconds, the flambé that makes a lomo saltado.
+ * The pan as a grid of pixels, `width` by `height` (even), row-major: a round
+ * stainless pan seen from above at an angle, a pool of dark sauce at the back
+ * under a wooden spoon, a blue towel over the handle, smoke rising over it,
+ * flames licking its lower edge and, every few seconds, the flambé that makes
+ * a lomo saltado.
  */
 export function wokPixels(width: number, height: number, look: WokLook): Int32Array {
   const pixels = new Int32Array(width * height).fill(CLEAR)
@@ -111,12 +112,11 @@ export function wokPixels(width: number, height: number, look: WokLook): Int32Ar
   const get = (x: number, y: number) => (x >= 0 && x < width && y >= 0 && y < height ? pixels[y * width + x] : CLEAR)
   const doneness = Math.max(0, Math.min(1, look.doneness))
   const smokeRows = height >= 16 ? 3 : 1
-  const panRows = height - smokeRows - 1 // one row under the wok for the flames
-  const helper = width >= 26 ? 2 : 1
-  const handle = width >= 26 ? 7 : 4
+  const panRows = height - smokeRows - 1 // one row under the pan for the flames
+  const towel = width >= 26 ? 4 : 3
   const ry = panRows / 2
-  const rx = Math.min(ry * 1.3, (width - helper - handle) / 2 - 0.5)
-  const cx = (width - 1 - (handle - helper)) / 2
+  const rx = Math.min(ry * 1.3, (width - towel) / 2 - 0.5)
+  const cx = (width - 1 - towel) / 2
   const cy = smokeRows + (panRows - 1) / 2
   // Distance from the centre in units of the ellipse: 1 on its edge.
   const reach = (x: number, y: number, ax: number, ay: number) => Math.hypot((x - cx) / ax, (y - cy) / ay)
@@ -127,6 +127,8 @@ export function wokPixels(width: number, height: number, look: WokLook): Int32Ar
   const lift = look.isCooking && look.frame % TOSS_EVERY < 2 ? 1 : 0
   const isFlaring = look.isCooking && look.frame % FLARE_EVERY < FLARE_FOR
   const open = PILE.filter(piece => doneness >= piece.at)
+  const wallRows = height >= 16 ? 2 : 1
+  const piece = width >= 26 ? 3 : 2
 
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
@@ -140,61 +142,76 @@ export function wokPixels(width: number, height: number, look: WokLook): Int32Ar
         set(x, y, light > 0.45 ? RIM_LIGHT : light < -0.35 ? RIM_DARK : RIM)
         continue
       }
-      // The far inner wall shows as a thin dark band along the top.
-      if (y < cy && reach(x, y + 1, irx, iry) > 1) {
-        set(x, y, WALL)
+      // The far inner wall shows as a bright steel band along the top.
+      if (y < cy && reach(x, y + wallRows, irx, iry) > 1) {
+        set(x, y, reach(x, y + 1, irx, iry) > 1 ? WALL : WALL_DARK)
         continue
       }
-      // The bottom of the wok: steel, glossed with the juice as it cooks.
-      let floor = mix(STEEL, SAUCE, doneness * 0.85)
-      floor = mix(floor, [255, 240, 220], 0.1 * (1 - inner) + (hash(x, y, 3) > 0.9 ? 0.15 : 0))
-      // Strips two pixels long, rows offset like bricks: the beef and the fries are sticks.
+      // The bottom of the pan: steel, pooled with the dark glossy juice as it cooks.
+      let floor = mix(STEEL, SAUCE, Math.min(1, 0.25 + doneness))
+      if (hash(x, y, 3) > 0.88) floor = mix(floor, [255, 236, 210], 0.3)
+      // Pieces two or three pixels long, rows offset like bricks: strips of beef, wedges of onion and tomato.
       const sy = y + lift
-      const strip = Math.floor((x + (sy % 2)) / 2)
-      const isEdge = (x + (sy % 2)) % 2 === 1
+      const strip = Math.floor((x + (sy % 2)) / piece)
+      const isEdge = (x + (sy % 2)) % piece === piece - 1
       let roll = hash(strip, sy, toss + 11)
-      // The pile heaps in the middle and thins toward the wall.
-      roll += Math.max(0, inner - 0.75) * 0.6
+      // The pile heaps toward the front and the left; the sauce pools at the back, by the spoon.
+      const back = ((x - cx) / irx) * 0.6 - ((y - cy) / iry) * 0.8
+      roll += Math.max(0, inner - 0.8) * 0.6 + Math.max(0, back - 0.35) * 0.7
       let colour: Rgb = floor
-      for (const piece of open) {
-        if (roll < piece.share) {
-          colour = pieceColour(piece.name, doneness, hash(x, y, toss + 5), isEdge)
+      for (const item of open) {
+        if (roll < item.share) {
+          colour = pieceColour(item.name, doneness, hash(strip, sy, toss + 5), isEdge)
           break
         }
-        roll -= piece.share
+        roll -= item.share
       }
       set(x, y, pack(colour))
     }
   }
 
   if (doneness >= 1) {
-    // Served: chopped parsley over the top.
+    // Served: sprigs of cilantro over the top, a leaf and its stem.
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
-        if (reach(x, y, irx, iry) > 0.85 || get(x, y) === WALL) continue
-        const roll = hash(x, y, 21)
-        if (roll > 0.86) set(x, y, PARSLEY[roll > 0.93 ? 1 : 0]!)
+        if (reach(x, y, irx, iry) > 0.8 || get(x, y) === WALL || get(x, y) === WALL_DARK) continue
+        if (hash(x, y, 21) > 0.9) {
+          set(x, y, CILANTRO[0]!)
+          if (hash(x, y, 22) > 0.4) set(x + 1, y + 1, CILANTRO[1]!)
+        }
       }
     }
   }
 
-  // The helper loop on the left: a short steel tab.
+  // The wooden spoon: its bowl in the sauce at the back, its handle over the far rim.
+  // While cooking it stirs, a pixel either way at each toss.
+  const stir = look.isCooking ? (toss % 3) - 1 : 0
+  const spoonFrom = { x: Math.round(cx + irx * 0.35) + stir, y: Math.round(cy - iry * 0.15) }
+  const spoonTo = { x: Math.round(cx + rx * 0.55), y: smokeRows - 1 }
+  const steps = Math.max(Math.abs(spoonTo.x - spoonFrom.x), Math.abs(spoonTo.y - spoonFrom.y))
+  for (let i = 0; i <= steps; i++) {
+    const x = Math.round(spoonFrom.x + ((spoonTo.x - spoonFrom.x) * i) / Math.max(1, steps))
+    const y = Math.round(spoonFrom.y + ((spoonTo.y - spoonFrom.y) * i) / Math.max(1, steps))
+    set(x, y, i === 0 ? SPOON_DARK : SPOON)
+  }
+  set(spoonFrom.x - 1, spoonFrom.y, SPOON_DARK)
+  if (width >= 26) set(spoonFrom.x, spoonFrom.y + 1, SPOON_DARK)
+
+  // The towel: a blue cloth draped over the right of the rim, where the handle is.
   const handleY = Math.round(cy)
-  let leftEdge = 0
-  while (leftEdge < width && reach(leftEdge, handleY, rx, ry) > 1) leftEdge++
   let rightEdge = width - 1
   while (rightEdge >= 0 && reach(rightEdge, handleY, rx, ry) > 1) rightEdge--
-  for (let i = 1; i <= helper; i++) set(leftEdge - i, handleY, i === helper ? RIM_LIGHT : RIM)
-  // The long wooden handle on the right, after a steel socket, rising a little.
-  set(rightEdge + 1, handleY, RIM_LIGHT)
-  for (let i = 2; i <= handle; i++) {
-    const y = handleY - (handle >= 6 && i > handle / 2 + 1 ? 1 : 0)
-    set(rightEdge + i, y, i === handle ? HANDLE_LIGHT : HANDLE)
-    if (handle >= 6) set(rightEdge + i, y + 1, HANDLE_DARK)
+  const drape = width >= 26 ? 2 : 1
+  for (let dy = -drape; dy <= drape + 1; dy++) {
+    const reachOut = towel - Math.abs(dy - 0.5) * (width >= 26 ? 0.8 : 1)
+    for (let dx = -1; dx <= reachOut; dx++) {
+      const roll = hash(rightEdge + dx, handleY + dy, 31)
+      set(rightEdge + dx, handleY + dy, TOWEL[roll > 0.75 ? 2 : roll > 0.4 ? 0 : 1]!)
+    }
   }
 
   if (look.isCooking) {
-    // Flames lick the lower half of the wok from outside its edge; in a flambé they climb the sides.
+    // Flames lick the lower half of the pan from outside its edge; in a flambé they climb the sides.
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
         if (get(x, y) !== CLEAR) continue
@@ -212,7 +229,7 @@ export function wokPixels(width: number, height: number, look: WokLook): Int32Ar
   }
 
   if (isFlaring) {
-    // The flambé: the wok catches and fire tongues rise over the food and into the air above it.
+    // The flambé: the pan catches and fire tongues rise over the food and into the air above it.
     for (let y = 0; y < Math.round(cy); y++) {
       for (let x = 0; x < width; x++) {
         if (reach(x, y, irx + 0.5, iry + smokeRows) > 1) continue
@@ -224,7 +241,7 @@ export function wokPixels(width: number, height: number, look: WokLook): Int32Ar
       }
     }
   } else if (look.isCooking || doneness >= 1) {
-    // Smoke: loose puffs that rise off the wok, drift and fade; never a column.
+    // Smoke: loose puffs that rise off the pan, drift and fade; never a column.
     const wisps = width >= 26 ? 3 : 2
     for (let w = 0; w < wisps; w++) {
       const baseX = cx + ((w + 0.5) / wisps - 0.5) * rx * 1.2

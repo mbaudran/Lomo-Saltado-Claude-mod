@@ -25,7 +25,7 @@
 
 > **¿Te quedas mirando la pantalla esperando a que Claude termine?**
 
-Tienes tres terminales de Claude Code. Una refactoriza, otra escribe tests y la tercera acabó hace diez minutos sin que te dieras cuenta. `Lomo-Saltado` le da a cada terminal un nombre, una barra de progreso en vivo y un **lomo saltado que se cocina en el wok** mientras Claude trabaja. Un comando muestra todas las terminales a la vez.
+Tienes tres terminales de Claude Code. Una refactoriza, otra escribe tests y la tercera acabó hace diez minutos sin que te dieras cuenta. `Lomo-Saltado` le da a cada terminal un nombre, una barra de progreso en vivo y un **lomo saltado que se cocina en la sartén** mientras Claude trabaja. Un comando muestra todas las terminales a la vez.
 
 Es un **mod** de Claude Code (function hooks que dibujan directamente en la interfaz), basado en [`cooked`](https://github.com/Marcelfedz/cooked) de Marcel, que cocina una paella. Aquí cambiamos la paella valenciana por el clásico peruano.
 
@@ -33,24 +33,23 @@ Es un **mod** de Claude Code (function hooks que dibujan directamente en la inte
 
 ## Qué ves
 
-**Encima del prompt, en cada terminal**: su nombre, una barra de progreso, lo que está haciendo ahora mismo y un wok en pixel art con fuego y humo:
+**Encima del prompt, en cada terminal**: su nombre, una barra de progreso, lo que está haciendo ahora mismo y una sartén de lomo saltado en pixel art con fuego y humo:
 
 ```
-[wok]  marshall  ━━━━━━━━━━━━━━━━━━━━╸─────────────────  3/7
+[🍳]   marshall  ━━━━━━━━━━━━━━━━━━━━╸─────────────────  3/7
        ▸ Escribiendo la cocina
        14 ops · 2 ayudantes · 1m 20s · editando register.tsx
        "convierte cooked en un lomo saltado"
 ```
 
-El wok se ve desde arriba: acero negro, un asa corta a la izquierda y el mango largo de madera a la derecha, con llamas lamiendo el borde. Los ingredientes entran en orden, como en la receta:
+La sartén se ve desde arriba: acero inoxidable con el borde brillante, una cuchara de madera metida en la salsa del fondo y un trapo azul sobre el mango, con llamas lamiendo el borde. Los ingredientes entran en orden, como en la receta:
 
 1. **El lomo** primero: tiras rojas que se sellan y se vuelven marrones.
-2. **La cebolla roja**, morada al principio y más suave después.
-3. **El tomate** y **el ají amarillo**.
-4. **Las papas fritas**, al final.
-5. **El perejil picado**, solo cuando está servido.
+2. **La cebolla roja** en gajos, morada por fuera y con su capa blanca por dentro.
+3. **El tomate** en gajos y **el ají amarillo** en tiras.
+4. **El cilantro**, solo cuando está servido.
 
-Mientras cocina, el wok **se saltea**: cada segundo y medio la mezcla salta y cae en otro sitio. Cada pocos segundos viene **el flambeado**: el wok se prende y las llamas suben por encima de la comida. El jugo (sillao y vinagre) va oscureciendo el fondo.
+Mientras cocina, la sartén **se saltea**: cada segundo y medio la mezcla salta y cae en otro sitio, y la cuchara remueve. Cada pocos segundos viene **el flambeado**: la sartén se prende y las llamas suben por encima de la comida. El jugo (sillao y vinagre) se va juntando oscuro y brillante al fondo.
 
 **Al pie de la banda, la línea de sesión** (en el azul del tema):
 
@@ -60,7 +59,7 @@ opus 5.5 · contexto ███░░░░░░░ 34% · ↑1.2M ↓84k tokens
 
 Modelo, cuánto contexto queda (con `casi lleno` desde el 80 %), los tokens gastados en la sesión, cuánto lleva abierta y tus límites de uso (con suscripción) o el coste (con API key).
 
-<img src="./saltado/assets/wok.png" alt="El wok en cinco puntos de cocción, el flambeado y las barras" />
+<img src="./saltado/assets/wok.png" alt="La sartén en cinco puntos de cocción, el flambeado y las barras" />
 
 **`/saltado` abre la cocina**: un panel con todas las terminales de la máquina que usan el mod:
 
@@ -120,7 +119,7 @@ Claude Code no sabe cuánto va a tardar una tarea, así que un porcentaje por ti
 
 El mod no pide a Claude que haga ninguna lista: no añade herramientas ni texto al prompt, así que cuesta **cero tokens extra**. Solo lee lo que Claude hace de todas formas.
 
-El wok es decoración y puede adivinar: sin plan se cocina despacio con el tiempo, y nunca se sirve antes de que termine el turno.
+La sartén es decoración y puede adivinar: sin plan se cocina despacio con el tiempo, y nunca se sirve antes de que termine el turno.
 
 ---
 
@@ -133,13 +132,13 @@ Un módulo de hooks, `saltado/hooks/register.tsx`, sobre la API de mods:
 | `turn.start` | Un plato nuevo: el prompt, la hora de inicio, contadores a cero. El turno de un subagente cuenta como ayudante. |
 | `tool.call` | Cuenta la operación, describe la actividad, apunta los archivos editados; tras `TodoWrite` / `TaskCreate` / `TaskUpdate`, actualiza el plan. Nunca bloquea una llamada. |
 | `turn.complete` | Lo marca como servido, suma los tokens del turno y manda la notificación. |
-| `ui.render` `AbovePrompt` | Dibuja la banda. El wok y las barras son celdas `Raster` (pixel art con medios bloques), animadas con `$.ui.blit`. |
+| `ui.render` `AbovePrompt` | Dibuja la banda. La sartén y las barras son celdas `Raster` (pixel art con medios bloques), animadas con `$.ui.blit`. |
 | `ui.render` `Pane` | Dibuja la cocina. |
 | `command.run` `saltado` | Abre o cierra la cocina; `nombre` renombra la terminal. |
 
 El estado vive en `$.state`, así que recargar el mod no lo pierde. Para la cocina, cada sesión escribe un JSON pequeño en `~/.claude/saltado/cocina/<session-id>.json` (latido cada 15 s, se borra al cerrar la sesión, los de más de 12 h se limpian). Nada sale de tu máquina.
 
-El dibujo está en `saltado/hooks/wok.ts`, con funciones puras. `node --experimental-strip-types tools/saltado-preview.ts saltado/assets/wok.png` lo renderiza a PNG (y el icono a `icon.png`) para ajustar la receta.
+El dibujo está en `saltado/hooks/wok.ts`, con funciones puras (la receta visual sigue una foto de un lomo saltado en sartén). `node --experimental-strip-types tools/saltado-preview.ts saltado/assets/wok.png` lo renderiza a PNG (y el icono a `icon.png`) para ajustar la receta.
 
 Tests: `claude plugin test saltado`.
 
@@ -157,7 +156,7 @@ No. Una llamada a herramienta cuesta un par de escrituras de estado en memoria. 
 `ctrl+x ctrl+a` (o el `[-]` a su lado) la pliega, como cualquier banda encima del prompt.
 
 **¿Funciona fuera de la terminal?**
-La app de escritorio dibuja la misma banda y cocina con barras de texto (no tiene celdas de píxeles, así que no hay wok). Las notificaciones usan macOS primero, `notify-send` en Linux y el canal propio de Claude Code en el resto.
+La app de escritorio dibuja la misma banda y cocina con barras de texto (no tiene celdas de píxeles, así que no hay sartén). Las notificaciones usan macOS primero, `notify-send` en Linux y el canal propio de Claude Code en el resto.
 
 **¿Por qué lomo saltado?**
 Porque se hace a fuego vivo, rápido y con flambeado, como un buen turno de Claude. Y porque cuando termina, está *saltado*.
@@ -172,7 +171,7 @@ Porque se hace a fuego vivo, rápido y con flambeado, como un buen turno de Clau
 | `SALTADO_NOTIFY` | on | `off` silencia las notificaciones; la banda y la cocina siguen. |
 | `SALTADO_REPO` | `mbaudran/Lomo-Saltado` | El repo del que tira `install.sh` (para forks). |
 
-**Icono en el banner (opcional, macOS).** Con [terminal-notifier](https://github.com/julienXX/terminal-notifier) instalado (`brew install terminal-notifier`), los banners llevan el icono del wok.
+**Icono en el banner (opcional, macOS).** Con [terminal-notifier](https://github.com/julienXX/terminal-notifier) instalado (`brew install terminal-notifier`), los banners llevan el icono de la sartén.
 
 ---
 
@@ -190,4 +189,4 @@ O `bash ~/.claude/plugins/marketplaces/lomo-saltado/uninstall.sh` si lo instalas
 
 ## Créditos y licencia
 
-Basado en [`cooked`](https://github.com/Marcelfedz/cooked) de Marcel (MIT): la banda, la cocina, las barras y las notificaciones son suyas; el wok, la receta y el castellano son de aquí. MIT, ver [`LICENSE`](./LICENSE).
+Basado en [`cooked`](https://github.com/Marcelfedz/cooked) de Marcel (MIT): la banda, la cocina, las barras y las notificaciones son suyas; la sartén, la receta y el castellano son de aquí. MIT, ver [`LICENSE`](./LICENSE).

@@ -205,11 +205,11 @@ describe('the words', () => {
 })
 
 describe('the wok', () => {
-  test('the beef goes in first, the fries near the end, the parsley once served', () => {
+  test('the beef goes in first, the cilantro only once served', () => {
     const colours = (doneness: number, isCooking: boolean) =>
       new Set(wokPixels(32, 20, { doneness, frame: 7, isCooking }))
-    expect(colours(0, true).has(0x5fb548)).toBe(false)
-    expect(colours(1, false).has(0x5fb548)).toBe(true)
+    expect(colours(0, true).has(0x5cc84a)).toBe(false)
+    expect(colours(1, false).has(0x5cc84a)).toBe(true)
   })
 
   test('flares into a flambé every few seconds', () => {
