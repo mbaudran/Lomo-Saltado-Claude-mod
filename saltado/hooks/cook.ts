@@ -167,7 +167,27 @@ export function kitchenRow(cook: Cook, meta: { sessionId: string; name: string; 
     cooks: cook.cooks.length,
     done: progress.done,
     total: progress.total,
+    aborted: cook.isAborted,
     updatedAt: meta.now,
+  }
+}
+
+/** How long Keloqz's heartbeat counts as alive. */
+export const KELOQZ_FRESH_MS = 30_000
+
+/**
+ * The pid of a running Keloqz (the desktop dog) when its heartbeat file is
+ * fresh, else undefined. While Keloqz is up it shows the ¡Saltado! itself, so
+ * the banner is skipped; muted counts too, since muted means "no banner".
+ */
+export function keloqzPid(raw: string | undefined, now: number): number | undefined {
+  if (!raw) return undefined
+  try {
+    const beat = JSON.parse(raw) as { pid?: unknown; updatedAt?: unknown }
+    if (typeof beat.pid !== 'number' || typeof beat.updatedAt !== 'number') return undefined
+    return now - beat.updatedAt < KELOQZ_FRESH_MS ? beat.pid : undefined
+  } catch {
+    return undefined
   }
 }
 

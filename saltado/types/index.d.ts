@@ -44,6 +44,8 @@ export type KitchenRow = {
   cooks: number
   done: number
   total: number
+  /** The turn was stopped with Esc (no notification for it). */
+  aborted?: boolean
   updatedAt: number
 }
 

@@ -2,7 +2,7 @@ import { describe, expect, mock, test } from 'claude-code/testing'
 import type { On } from 'claude-code'
 
 import { wokPixels } from '../hooks/wok'
-import { compactCount, contextBar, describeTool, donenessOf, formatSpan, progressOf, shortModel, statusLine, stepsAfterUpdate } from '../hooks/cook'
+import { FRESH, compactCount, contextBar, describeTool, donenessOf, formatSpan, keloqzPid, kitchenRow, progressOf, shortModel, statusLine, stepsAfterUpdate } from '../hooks/cook'
 
 const BAND = {
   plugin: 'saltado',
@@ -215,5 +215,32 @@ describe('the wok', () => {
   test('flares into a flambé every few seconds', () => {
     const flames = (frame: number) => [...wokPixels(32, 20, { doneness: 0.5, frame, isCooking: true })].filter(c => c === 0xffe04a).length
     expect(flames(1)).toBeGreaterThan(flames(7))
+  })
+})
+
+describe('handing off to Keloqz', () => {
+  test('fresh heartbeat returns the pid', () => {
+    expect(keloqzPid('{"pid":42,"updatedAt":1000,"muted":false}', 20_000)).toBe(42)
+  })
+
+  test('stale heartbeat returns undefined', () => {
+    expect(keloqzPid('{"pid":42,"updatedAt":1000,"muted":false}', 31_000)).toBeUndefined()
+  })
+
+  test('muted heartbeat still returns the pid', () => {
+    expect(keloqzPid('{"pid":42,"updatedAt":1000,"muted":true}', 2_000)).toBe(42)
+  })
+
+  test('missing or broken file returns undefined', () => {
+    expect(keloqzPid(undefined, 2_000)).toBeUndefined()
+    expect(keloqzPid('', 2_000)).toBeUndefined()
+    expect(keloqzPid('{"pid":', 2_000)).toBeUndefined()
+    expect(keloqzPid('{"pid":"42","updatedAt":1000}', 2_000)).toBeUndefined()
+  })
+
+  test('the kitchen row says whether the turn was aborted', () => {
+    const meta = { sessionId: 's', name: 'n', cwd: '/w', now: 1 }
+    expect(kitchenRow({ ...FRESH, isAborted: true }, meta).aborted).toBe(true)
+    expect(kitchenRow(FRESH, meta).aborted).toBe(false)
   })
 })

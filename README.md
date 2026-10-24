@@ -138,6 +138,8 @@ Un módulo de hooks, `saltado/hooks/register.tsx`, sobre la API de mods:
 
 El estado vive en `$.state`, así que recargar el mod no lo pierde. Para la cocina, cada sesión escribe un JSON pequeño en `~/.claude/saltado/cocina/<session-id>.json` (latido cada 15 s, se borra al cerrar la sesión, los de más de 12 h se limpian). Nada sale de tu máquina.
 
+**Con Keloqz.** Si tienes abierto **Keloqz**, el pastor alemán de escritorio, él mismo anuncia el **¡Saltado!** y el mod no manda el banner de macOS. Keloqz escribe su latido en `~/.claude/saltado/keloqz.json` cada 10 s; mientras tenga menos de 30 s y su proceso siga vivo, el mod se calla (también si Keloqz está silenciado). Si cierras Keloqz, los banners vuelven solos. Cada fila de la cocina lleva además `aborted`, para que Keloqz tampoco avise de los turnos parados con Esc.
+
 El dibujo está en `saltado/hooks/wok.ts`, con funciones puras (la receta visual sigue una foto de un lomo saltado en sartén). `node --experimental-strip-types tools/saltado-preview.ts saltado/assets/wok.png` lo renderiza a PNG (y el icono a `icon.png`) para ajustar la receta.
 
 Tests: `claude plugin test saltado`.

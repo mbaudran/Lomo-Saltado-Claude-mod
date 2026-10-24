@@ -11,6 +11,7 @@ import {
   finishText,
   formatDuration,
   isPlanTool,
+  keloqzPid,
   kitchenOrder,
   kitchenRow,
   oneLine,
@@ -64,6 +65,7 @@ const live = {
   isOn: false,
   cwd: '',
   dir: '',
+  home: '',
   sessionId: '',
   mirror: FRESH,
   label: '',
@@ -173,10 +175,19 @@ function stopTicker() {
   live.ticker = undefined
 }
 
+// Keloqz, the desktop dog, shows the ¡Saltado! itself while its heartbeat is fresh.
+async function keloqzIsUp($: $) {
+  if (!live.home) return false
+  const raw = await $.fs.read(`${live.home}/.claude/saltado/keloqz.json`).catch(() => undefined)
+  const pid = keloqzPid(raw, await $.clock.now())
+  return pid !== undefined && (await run($, ['kill', '-0', String(pid)]))?.exitCode === 0
+}
+
 // The finish notification: a banner, or a sticky alert after a long turn.
 
 async function serve($: $, done: Cook) {
   if (!live.isNotifying || done.isAborted) return
+  if (await keloqzIsUp($)) return
   const elapsed = done.endedAt - done.startedAt
   const { body, details } = finishText(done, elapsed)
   const isLong = elapsed >= live.thresholdMs
@@ -227,6 +238,7 @@ async function setUp($: $, cwd: string) {
   })
 
   const home = await $.env.get('HOME')
+  live.home = home ?? ''
   if (home) live.dir = `${home}/.claude/saltado/cocina`
   const threshold = Number(await $.env.get('SALTADO_ALERT_THRESHOLD'))
   if (Number.isFinite(threshold) && threshold > 0) live.thresholdMs = threshold * 1000
