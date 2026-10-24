@@ -1,6 +1,6 @@
 {
   "name": "saltado",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Deja de vigilar a Claude. Cada terminal tiene un nombre, una barra de progreso en vivo y un lomo saltado flambeándose en el wok encima del prompt; /saltado abre la cocina con todas las terminales.",
   "author": { "name": "Mael" },
   "types": "./types/index.d.ts"

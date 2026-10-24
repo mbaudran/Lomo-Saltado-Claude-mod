@@ -175,11 +175,12 @@ function stopTicker() {
   live.ticker = undefined
 }
 
-// Keloqz, the desktop dog, shows the ¡Saltado! itself while its heartbeat is fresh.
+// Keloqz, the desktop dog, shows the ¡Saltado! itself for the sessions its
+// fresh heartbeat lists.
 async function keloqzIsUp($: $) {
   if (!live.home) return false
   const raw = await $.fs.read(`${live.home}/.claude/saltado/keloqz.json`).catch(() => undefined)
-  const pid = keloqzPid(raw, await $.clock.now())
+  const pid = keloqzPid(raw, await $.clock.now(), await $.session.id())
   return pid !== undefined && (await run($, ['kill', '-0', String(pid)]))?.exitCode === 0
 }
 

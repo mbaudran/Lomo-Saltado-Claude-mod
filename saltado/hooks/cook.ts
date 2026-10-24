@@ -176,16 +176,19 @@ export function kitchenRow(cook: Cook, meta: { sessionId: string; name: string; 
 export const KELOQZ_FRESH_MS = 30_000
 
 /**
- * The pid of a running Keloqz (the desktop dog) when its heartbeat file is
- * fresh, else undefined. While Keloqz is up it shows the ¡Saltado! itself, so
- * the banner is skipped; muted counts too, since muted means "no banner".
+ * The pid of a running Keloqz (the desktop dog) when it shows this session's
+ * ¡Saltado! itself: its heartbeat is fresh and lists the session. Muted counts
+ * for every session, since muted means "no banner". Anything else, undefined:
+ * the banner goes out.
  */
-export function keloqzPid(raw: string | undefined, now: number): number | undefined {
+export function keloqzPid(raw: string | undefined, now: number, sessionId: string): number | undefined {
   if (!raw) return undefined
   try {
-    const beat = JSON.parse(raw) as { pid?: unknown; updatedAt?: unknown }
+    const beat = JSON.parse(raw) as { pid?: unknown; updatedAt?: unknown; muted?: unknown; sessions?: unknown }
     if (typeof beat.pid !== 'number' || typeof beat.updatedAt !== 'number') return undefined
-    return now - beat.updatedAt < KELOQZ_FRESH_MS ? beat.pid : undefined
+    if (now - beat.updatedAt >= KELOQZ_FRESH_MS) return undefined
+    const covers = beat.muted === true || (Array.isArray(beat.sessions) && beat.sessions.includes(sessionId))
+    return covers ? beat.pid : undefined
   } catch {
     return undefined
   }

@@ -34,9 +34,9 @@ const PANE = {
 } as const
 
 /** The engine beneath the plugin: each event saltado passes on is answered here. */
-function kitchenFloor(on: On) {
+function kitchenFloor(on: On, env: Record<string, string> = {}) {
   mock.clock(on, { now: 1_760_000_000_000 })
-  mock.env(on, {})
+  mock.env(on, env)
   on('command.register', ($, e) => ({ value: { command: e.name } }))
   on('ui.panes', () => ({ value: [] }))
   on('session.start', ($, e) => ({ cwd: e.cwd }))
@@ -219,28 +219,105 @@ describe('the wok', () => {
 })
 
 describe('handing off to Keloqz', () => {
-  test('fresh heartbeat returns the pid', () => {
-    expect(keloqzPid('{"pid":42,"updatedAt":1000,"muted":false}', 20_000)).toBe(42)
+  const beat = (fields: Record<string, unknown>) => JSON.stringify({ pid: 42, updatedAt: 1000, muted: false, sessions: ['s1'], ...fields })
+
+  test('fresh heartbeat listing this session returns the pid', () => {
+    expect(keloqzPid(beat({}), 20_000, 's1')).toBe(42)
+  })
+
+  test('a session Keloqz does not list keeps its banner', () => {
+    expect(keloqzPid(beat({ sessions: ['other'] }), 20_000, 's1')).toBeUndefined()
+    expect(keloqzPid(beat({ sessions: undefined }), 20_000, 's1')).toBeUndefined()
   })
 
   test('stale heartbeat returns undefined', () => {
-    expect(keloqzPid('{"pid":42,"updatedAt":1000,"muted":false}', 31_000)).toBeUndefined()
+    expect(keloqzPid(beat({}), 31_000, 's1')).toBeUndefined()
   })
 
-  test('muted heartbeat still returns the pid', () => {
-    expect(keloqzPid('{"pid":42,"updatedAt":1000,"muted":true}', 2_000)).toBe(42)
+  test('muted Keloqz silences every session', () => {
+    expect(keloqzPid(beat({ muted: true, sessions: [] }), 2_000, 's1')).toBe(42)
   })
 
   test('missing or broken file returns undefined', () => {
-    expect(keloqzPid(undefined, 2_000)).toBeUndefined()
-    expect(keloqzPid('', 2_000)).toBeUndefined()
-    expect(keloqzPid('{"pid":', 2_000)).toBeUndefined()
-    expect(keloqzPid('{"pid":"42","updatedAt":1000}', 2_000)).toBeUndefined()
+    expect(keloqzPid(undefined, 2_000, 's1')).toBeUndefined()
+    expect(keloqzPid('', 2_000, 's1')).toBeUndefined()
+    expect(keloqzPid('{"pid":', 2_000, 's1')).toBeUndefined()
+    expect(keloqzPid(beat({ pid: '42' }), 2_000, 's1')).toBeUndefined()
   })
 
   test('the kitchen row says whether the turn was aborted', () => {
     const meta = { sessionId: 's', name: 'n', cwd: '/w', now: 1 }
     expect(kitchenRow({ ...FRESH, isAborted: true }, meta).aborted).toBe(true)
     expect(kitchenRow(FRESH, meta).aborted).toBe(false)
+  })
+})
+
+describe('the finish banner with Keloqz around', () => {
+  const NOW = 1_760_000_000_000
+  const ran = (stdout: string, exitCode = 0) => ({ exitCode, stdout, stderr: '', isStdoutTruncated: false, isStderrTruncated: false })
+
+  /** A Mac with osascript, this session `sess-1`, and Keloqz's heartbeat as given. */
+  function macWithKeloqz(on: On, heartbeat: string | undefined, isKeloqzAlive = true) {
+    kitchenFloor(on, { HOME: '/Users/t' })
+    const commands: string[][] = []
+    on('session.id', () => ({ value: 'sess-1' }))
+    on('process.run', ($, e) => {
+      commands.push([...e.argv])
+      if (e.argv[0] === 'uname') return { value: ran('Darwin\n') }
+      if (e.argv[0] === 'date') return { value: ran('+0200\n') }
+      if (e.argv[0] === 'kill') return { value: ran('', isKeloqzAlive ? 0 : 1) }
+      if (e.argv.includes('command -v "$1"')) return { value: ran('', 1) }
+      return { value: ran('') }
+    })
+    on('fs.read', ($, e) =>
+      e.path === '/Users/t/.claude/saltado/keloqz.json' && heartbeat !== undefined ? { value: heartbeat } : { deny: 'no such file' },
+    )
+    return () => commands.some(argv => argv.includes('osascript'))
+  }
+
+  async function finishATurn($: Parameters<Parameters<typeof test>[1]>[0]) {
+    await $.session.start({ cwd: '/work/marshall', surface: 'terminal', isInteractive: true })
+    await $.turn.start({ text: 'quick one', turnId: 't1' })
+    await $.turn.complete({ answer: 'done', durationMs: 4000, isAborted: false, turnId: 't1', reason: 'answer' })
+    for (let i = 0; i < 50; i++) await new Promise(resolve => setTimeout(resolve, 0))
+  }
+
+  const fresh = (fields: Record<string, unknown> = {}) =>
+    JSON.stringify({ pid: 4242, updatedAt: NOW - 5_000, muted: false, sessions: ['sess-1'], ...fields })
+
+  test('no Keloqz: the banner goes out', async ($, on) => {
+    const bannerSent = macWithKeloqz(on, undefined)
+    await finishATurn($)
+    expect(bannerSent()).toBe(true)
+  })
+
+  test('Keloqz covering this session: no banner', async ($, on) => {
+    const bannerSent = macWithKeloqz(on, fresh())
+    await finishATurn($)
+    expect(bannerSent()).toBe(false)
+  })
+
+  test('Keloqz not covering this session: the banner goes out', async ($, on) => {
+    const bannerSent = macWithKeloqz(on, fresh({ sessions: ['another'] }))
+    await finishATurn($)
+    expect(bannerSent()).toBe(true)
+  })
+
+  test('stale heartbeat: the banner goes out', async ($, on) => {
+    const bannerSent = macWithKeloqz(on, fresh({ updatedAt: NOW - 31_000 }))
+    await finishATurn($)
+    expect(bannerSent()).toBe(true)
+  })
+
+  test('Keloqz crashed (pid gone): the banner goes out', async ($, on) => {
+    const bannerSent = macWithKeloqz(on, fresh(), false)
+    await finishATurn($)
+    expect(bannerSent()).toBe(true)
+  })
+
+  test('Keloqz muted: no banner', async ($, on) => {
+    const bannerSent = macWithKeloqz(on, fresh({ muted: true, sessions: [] }))
+    await finishATurn($)
+    expect(bannerSent()).toBe(false)
   })
 })
